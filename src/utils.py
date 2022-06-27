@@ -4,6 +4,13 @@ from src.logger import empty_regress_loggings
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 from sklearn.metrics import matthews_corrcoef
+from scipy.stats import ttest_ind, kstest, normaltest, f_oneway, ttest_1samp
+from statsmodels.tsa.stattools import adfuller
+# from scipy.stats import permutation_test
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+from mlxtend.evaluate import permutation_test
 
 EPSILON = 1e-10
 
@@ -21,18 +28,19 @@ def _error(actual: np.ndarray, predicted: np.ndarray):
 def _percentage_error(actual: np.ndarray, predicted: np.ndarray):
     return _error(actual, predicted) / (actual + EPSILON)
 
+
 def mape(actual: np.ndarray, predicted: np.ndarray):
     return np.mean(np.abs(_percentage_error(actual, predicted)))
 
+
 def mda(actual: np.ndarray, predicted: np.ndarray):
-    """ Mean Directional Accuracy """
     return np.mean((np.sign(actual[1:] - actual[:-1]) == np.sign(predicted[1:] - predicted[:-1])).astype(int))
 
 
-def get_regress_perf_metrics(y_test, y_pred, model_name="",
-                             target_feature="",
-                             logging_metrics_list=empty_regress_loggings(),
-                             visualize_metrics=False):
+def get_regress_perf_metrics(y_test, y_pred, model_name: str = "",
+                             target_feature: str = "",
+                             logging_metrics_list: list = empty_regress_loggings(),
+                             visualize_metrics: bool = False):
     if visualize_metrics:
         print("For " + model_name + " regression algorithm the following "
                                     "performance metrics were determined:")
@@ -69,7 +77,6 @@ def get_regress_perf_metrics(y_test, y_pred, model_name="",
     return logging_metrics_list
 
 
-import matplotlib.pyplot as plt
 def plot_actual_and_predicted_feature(actual_price, predicted_price, model_name,
                                     date_interval=None, preview=True):
     if not date_interval:
@@ -83,69 +90,35 @@ def plot_actual_and_predicted_feature(actual_price, predicted_price, model_name,
         plt.show()
 
 
-from scipy.stats import ttest_ind, kstest, normaltest, f_oneway, ttest_1samp
-import numpy as np
-import pandas as pd
-
-from statsmodels.tsa.stattools import adfuller
-from scipy.stats import permutation_test
-
-def statistic(x, y, axis):
-    return np.mean(x, axis=axis) - np.mean(y, axis=axis)
-
 def permutation_test_fn(X, y):
-    res = permutation_test((X, y), statistic)
-    return res.statistic, res.p_value
+    num_rounds = 10000
+    p_value = permutation_test(X, y,
+                               method='approximate',
+                               num_rounds=num_rounds)
+    return p_value
 
-def normality_test(data):
-    return normaltest(data)
 
 def two_sample_t_test(a, b):
     return ttest_ind(a, b)
 
-def ks_test(a, b):
-    return kstest(a, b)
-
-def quantiles(data, q:int=50):
-    return np.quantile(data, q)
 
 def one_sample_t_test(data, popmean: float=0.0):
     return ttest_1samp(data, popmean)
 
-def one_way_anova(data):
-    return f_oneway(data)
-
-
-
-def is_data_stationary(time_series):
-    result = adfuller(time_series)
-    print('Augmented Dickey-Fuller Test:')
-
-    if result[1] <= 0.05:
-        return True
-    else:
-        return False
-
-def transform_data_to_stationary(df, target_feature):
-    max_shift_counter = 101
-    for shift_counter in range(max_shift_counter):
-        diff_arr = df[target_feature] - df[target_feature].shift(shift_counter)
-        diff_arr = diff_arr.dropna()
-        if is_data_stationary(diff_arr):
-            df[target_feature] = diff_arr
-            break
-    return df[target_feature]
-
-
 
 def main():
-    a = np.random.rand(1, 100)
-    b = np.random.rand(1, 100)
+    # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.replace.html
+    for file in os.listdir("data"):
+        filepath = os.path.join("data", file)
+        if filepath.endswith(".csv"):
+            df = pd.read_csv(filepath)
+            df.columns = df.columns.str.replace(' ', '_')
+            df.columns = df.columns.str.replace('(', '_')
+            df.columns = df.columns.str.replace('C', '_')
+            df.columns = df.columns.str.replace(')', '_')
+            df.columns = df.columns.str.replace('/', '_')
+            df.to_csv(filepath[:filepath.find(".")] + "_underlined_columns.csv")
 
-    logging_metrics_list = get_regress_perf_metrics(a, b)
 
-    print(logging_metrics_list)
-
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
-

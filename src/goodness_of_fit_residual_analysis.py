@@ -1,36 +1,32 @@
 import numpy as np
 import pandas as pd
-
-
-#import necessary libraries
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-# https://www.statology.org/residual-plot-python/
-def goodness_of_fit_analysis(df):
-    #fit simple linear regression model
-    model = ols('rating ~ points', data=df).fit()
+from src.data_utils import encode_data
 
-    #view model summary
+
+def goodness_of_fit_analysis(df = None):
+    # https://www.statology.org/residual-plot-python/
+    print(df.columns)
+    model = ols('Temperature____ ~ Humidity', data=df).fit()
+
     print(model.summary())
 
+    pred_var = "Temperature____"
+    var_1 = "Humidity"
+    var_2 = "Pressure__millibars_"
 
-    #define figure size
-    fig = plt.figure(figsize=(12,8))
+    model = ols(f'{pred_var} ~ {var_1} + {var_2}', data=df).fit()
 
-    #produce regression plots
-    fig = sm.graphics.plot_regress_exog(model, 'points', fig=fig)
-
-    #fit multiple linear regression model
-    model = ols('rating ~ assists + rebounds', data=df).fit()
-
-    #view model summary
     print(model.summary())
 
-    #create residual vs. predictor plot for 'assists'
-    fig = plt.figure(figsize=(12,8))
-    fig = sm.graphics.plot_regress_exog(model, 'assists', fig=fig)
+    fig = plt.figure(figsize=(12, 8))
+    fig = sm.graphics.plot_regress_exog(model, f"{var_1}", fig=fig)
+    plt.savefig(f"data/images/plot_regress_exog_{var_1}.png")
+    plt.show()
 
-    #create residual vs. predictor plot for 'assists'
-    fig = plt.figure(figsize=(12,8))
-    fig = sm.graphics.plot_regress_exog(model, 'rebounds', fig=fig)
+    fig = plt.figure(figsize=(12, 8))
+    fig = sm.graphics.plot_regress_exog(model, f"{var_2}", fig=fig)
+    plt.savefig(f"data/images/plot_regress_exog_{var_2}.png")
+    plt.show()
