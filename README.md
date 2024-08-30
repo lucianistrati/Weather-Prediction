@@ -40,4 +40,3 @@ To utilize the functionality provided by this repository, follow these steps:
 Contributions to this repository are welcome. If you find bugs, want to add new features, or improve existing ones, feel free to open an issue or submit a pull request.
 
 
-[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://stand-with-ukraine.pp.ua)
